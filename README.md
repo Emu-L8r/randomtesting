@@ -1,47 +1,66 @@
 # Pantilty
 
-This repository contains a parametric, engineering-oriented OpenSCAD concept for a dual-axis pan-tilt robot intended as a realistic industrial-style platform rather than a decorative toy model.
+This repository contains a parametric OpenSCAD **concept model** for a large industrial-style pan-tilt positioner. The current design intent is an approximately **5 m overall envelope** machine, expressed in millimeters.
 
 ## Files
 
-- `pan_tilt_robot.scad` — complete parametric OpenSCAD model.
+- `pan_tilt_robot.scad` — complete parametric OpenSCAD model
 
-## Design intent
+## Revised 5 m design intent
 
-The model includes:
+The model now represents a large-scale concept with:
 
-- dual motors on pan and tilt axes
-- planetary reduction architecture
-- realistic bearing and shaft interfaces
-- electronics compartment for approximately four Raspberry Pi boards
-- payload shelf and cable routing provisions
-- modular motor mounting patterns for NEMA-style stepper and servo-like motors
-- configurable assembly and exploded-view modes
+- a wide anchored stationary base and service enclosure
+- a substantial slew-ring / cross-roller-bearing style pan interface with a central cable passage
+- two **external** pan drive units arranged tangentially to the pan ring gear
+- a rigid U-yoke above the pan deck with coaxial left/right tilt trunnions
+- two **external** tilt gearmotor / planetary drive modules mounted outside the yoke side plates
+- a payload cradle/platform that rotates only about the defined horizontal trunnion axis
+- structural hard stops that land on stop blocks rather than on gearbox teeth
+- a resized internal electronics bay for four Raspberry Pi-class boards plus panel and cable gland
+
+## Corrected torque paths and geometry
+
+The pan stage is now shown as a stationary-base slew-drive arrangement: motor + gearbox modules sit outside the pan bearing envelope and drive pinions into the external pan ring gear. The tilt stage is arranged around a single explicit trunnion axis, and only the payload cradle/platform is a child of that tilt rotation.
+
+This replaces the earlier small-machine-style layout, where the payload shelf/frame could visually overlap the displayed tilt gearbox and the transforms did not cleanly make the tilt assembly pivot about one defined horizontal axis.
+
+## Engineering assumptions
+
+The OpenSCAD file includes first-order `echo()` outputs for:
+
+- static gravity torque
+- simplified acceleration torque
+- required torque with safety factor
+- available pan and tilt drive torque
+
+These numbers are clearly labeled as **first-order estimates only**. They are intended for concept iteration, not for structural sign-off, duty-cycle approval, or certification.
 
 ## Notes
 
-This is a conceptual engineering CAD model intended for further refinement with prototype testing, bearing selection, shaft stress analysis, and gear tooth load validation.
-
-The design targets roughly:
-
-- 5–10 kg payload
-- 250–350 mm shelf width
-- 360° pan concept with a realistic bearing and spindle layout
-- ±90° tilt concept with mechanical stops
-- 2 motors per axis
-- planetary reduction in the roughly 10:1 to 30:1 range depending on the final stage configuration
+- This remains a conceptual model rather than a production-ready machine.
+- Production controls for a 5 m industrial positioner would normally use industrial PLC/drive hardware rather than Raspberry Pis alone.
+- Gear teeth, bearings, bolts, and cable paths are simplified for clarity and OpenSCAD performance.
+- No certification or final structural validation is claimed.
 
 ## Usage
 
-Open `pan_tilt_robot.scad` in OpenSCAD and adjust the parameters at the top of the file. Typical options include:
+Open `pan_tilt_robot.scad` in OpenSCAD and adjust the parameters at the top of the file.
 
+Key parameters and toggles include:
+
+- `overall_target_envelope`
+- `structural_scale` (the actual geometry scale control)
 - `PAN_ANGLE`
 - `TILT_ANGLE`
 - `SHOW_ASSEMBLY`
 - `SHOW_EXPLODED`
-- `SHOW_GEARS`
 - `SHOW_MOTORS`
+- `SHOW_GEARS`
 - `SHOW_BEARINGS`
 - `SHOW_ELECTRONICS`
 - `SHOW_INTERNALS`
+- `SHOW_DEBUG`
+- `SHOW_TILT_SWEEP`
 
+`overall_target_envelope` is kept as the design-target reference value for the intended ~5 m machine envelope; use `structural_scale` if you want to resize the concept geometry.
