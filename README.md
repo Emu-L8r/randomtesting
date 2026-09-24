@@ -45,11 +45,12 @@ These numbers are clearly labeled as **first-order estimates only**. They are in
 
 ## Usage
 
-Open `/home/runner/work/randomtesting/randomtesting/pan_tilt_robot.scad` in OpenSCAD and adjust the parameters at the top of the file.
+Open `pan_tilt_robot.scad` in OpenSCAD and adjust the parameters at the top of the file.
 
 Key parameters and toggles include:
 
 - `overall_target_envelope`
+- `structural_scale` (the actual geometry scale control)
 - `PAN_ANGLE`
 - `TILT_ANGLE`
 - `SHOW_ASSEMBLY`
@@ -61,3 +62,5 @@ Key parameters and toggles include:
 - `SHOW_INTERNALS`
 - `SHOW_DEBUG`
 - `SHOW_TILT_SWEEP`
+
+`overall_target_envelope` is kept as the design-target reference value for the intended ~5 m machine envelope; use `structural_scale` if you want to resize the concept geometry.

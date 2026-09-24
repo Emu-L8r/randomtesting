@@ -30,6 +30,8 @@ SHOW_ELECTRONICS = true;
 SHOW_INTERNALS = false;
 SHOW_DEBUG = false;
 SHOW_TILT_SWEEP = true;
+SHOW_VALIDATION_ECHO = true;
+SHOW_ENGINEERING_ECHO = true;
 
 PAN_ANGLE = 0;
 TILT_ANGLE = 0;
@@ -162,6 +164,12 @@ stop_radius = 710 * s;
 central_cable_passage_d = 280 * s;
 service_cable_d = 90 * s;
 
+payload_cheek_x = payload_frame_width / 2 + payload_frame_tube / 2;
+tilt_drive_center_x = yoke_inner_span / 2 + yoke_plate_thickness + tilt_bearing_width / 2 + tilt_drive_gearbox_h / 2 + 30 * s;
+trunnion_drive_hub_x = payload_cheek_x + trunnion_hub_width / 2 + 8 * s;
+tilt_sector_center_x = payload_cheek_x + trunnion_hub_width + tilt_sector_width / 2;
+tilt_output_shaft_reach = tilt_drive_center_x - trunnion_drive_hub_x;
+
 pi_count = 4;
 pi_length = 90 * s;
 pi_width = 62 * s;
@@ -174,8 +182,10 @@ pi_pitch_y = 220 * s;
 // 6. STRUCTURAL PARAMETERS / FIRST-ORDER ENGINEERING ASSUMPTIONS
 // -----------------------------------------------------------------------------
 payload_mass = 750;          // kg, conceptual mounted package mass
+rotating_upper_mass = 2400;  // kg, first-order estimate for pan inertia sizing
 payload_cg_offset = 900;     // mm from tilt axis to payload CG assumption
 payload_radius_of_gyration = 1200; // mm simplified inertia radius for acceleration estimate
+pan_radius_of_gyration = 1100;     // mm simplified pan inertia radius for rotating upper mass
 safety_factor = 1.8;
 gravity = 9.81;
 tilt_acceleration = 0.18;    // rad/s^2, first-order tilt acceleration target
@@ -193,30 +203,39 @@ function mm_to_m(v) = v / 1000;
 
 T_gravity = payload_mass * gravity * mm_to_m(payload_cg_offset);
 I_tilt_est = payload_mass * pow(mm_to_m(payload_radius_of_gyration), 2);
+I_pan_est = rotating_upper_mass * pow(mm_to_m(pan_radius_of_gyration), 2);
 T_acceleration = I_tilt_est * tilt_acceleration;
+T_pan_acceleration = I_pan_est * pan_acceleration;
 T_required = (T_gravity + T_acceleration) * safety_factor;
+T_required_pan_acceleration_only = T_pan_acceleration * safety_factor;
 T_available_tilt = tilt_motor_count * motor_torque * tilt_drive_ratio * drive_efficiency;
 T_available_pan = pan_motor_count * motor_torque * pan_drive_ratio * drive_efficiency;
 
 // Explicit console output for quick concept iteration.
-echo("pan_planetary_ratio", pan_planetary_ratio);
-echo("tilt_planetary_ratio", tilt_planetary_ratio);
-echo("planet_count", planet_count);
-echo("pressure_angle_deg", pressure_angle);
-echo("First-order torque estimates only");
-echo("overall_target_envelope_mm", overall_target_envelope);
-echo("payload_mass_kg", payload_mass);
-echo("payload_cg_offset_mm", payload_cg_offset);
-echo("payload_radius_of_gyration_mm", payload_radius_of_gyration);
-echo("motor_torque_Nm_each", motor_torque);
-echo("pan_drive_ratio", pan_drive_ratio);
-echo("tilt_drive_ratio", tilt_drive_ratio);
-echo("safety_factor", safety_factor);
-echo("static_gravity_torque_Nm", T_gravity);
-echo("simplified_acceleration_torque_Nm", T_acceleration);
-echo("required_torque_Nm", T_required);
-echo("available_tilt_torque_Nm", T_available_tilt);
-echo("available_pan_torque_Nm", T_available_pan);
+if (SHOW_ENGINEERING_ECHO) {
+  echo("pan_planetary_ratio", pan_planetary_ratio);
+  echo("tilt_planetary_ratio", tilt_planetary_ratio);
+  echo("planet_count", planet_count);
+  echo("pressure_angle_deg", pressure_angle);
+  echo("First-order torque estimates only");
+  echo("overall_target_envelope_mm", overall_target_envelope);
+  echo("payload_mass_kg", payload_mass);
+  echo("rotating_upper_mass_kg", rotating_upper_mass);
+  echo("payload_cg_offset_mm", payload_cg_offset);
+  echo("payload_radius_of_gyration_mm", payload_radius_of_gyration);
+  echo("pan_radius_of_gyration_mm", pan_radius_of_gyration);
+  echo("motor_torque_Nm_each", motor_torque);
+  echo("pan_drive_ratio", pan_drive_ratio);
+  echo("tilt_drive_ratio", tilt_drive_ratio);
+  echo("safety_factor", safety_factor);
+  echo("static_gravity_torque_Nm", T_gravity);
+  echo("simplified_acceleration_torque_Nm", T_acceleration);
+  echo("required_torque_Nm", T_required);
+  echo("simplified_pan_acceleration_torque_Nm", T_pan_acceleration);
+  echo("required_pan_acceleration_only_torque_Nm", T_required_pan_acceleration_only);
+  echo("available_tilt_torque_Nm", T_available_tilt);
+  echo("available_pan_torque_Nm", T_available_pan);
+}
 
 // -----------------------------------------------------------------------------
 // 7. ELECTRONICS PARAMETERS
@@ -387,16 +406,20 @@ module slew_pedestal() {
 // 13. PLANETARY GEARBOX MODULE (simplified visual envelope for performance)
 // -----------------------------------------------------------------------------
 module planetary_gear_stage_preview(stage_od, stage_id, stage_width, sun_teeth, planet_teeth, ring_teeth) {
-  planet_center = (stage_od + stage_id) / 8;
+  ring_pitch_d = stage_id + (stage_od - stage_id) * 0.62;
+  tooth_unit = ring_pitch_d / ring_teeth;
+  sun_d = tooth_unit * sun_teeth;
+  planet_d = tooth_unit * planet_teeth;
+  planet_center = (sun_d + planet_d) / 2 + tooth_unit * 1.5;
   color([0.74, 0.74, 0.76])
     tube(stage_od, stage_id, stage_width);
   color([0.58, 0.60, 0.63])
-    cylinder(h = stage_width * 0.80, d = stage_id * 0.55, center = true);
+    cylinder(h = stage_width * 0.80, d = sun_d, center = true);
   for (i = [0 : planet_count - 1])
     rotate([0, 0, i * 360 / planet_count])
       translate([planet_center, 0, 0])
         color([0.66, 0.67, 0.69])
-          cylinder(h = stage_width * 0.70, d = stage_id * 0.26, center = true);
+          cylinder(h = stage_width * 0.70, d = planet_d, center = true);
 }
 
 // -----------------------------------------------------------------------------
@@ -553,33 +576,44 @@ module yoke_hard_stops() {
           rounded_box(stop_block_size, r = 18 * s);
 }
 
-module tilt_drive_module(side = 1) {
-  side_x = side * (yoke_inner_span / 2 + yoke_plate_thickness + tilt_bearing_width / 2 + tilt_drive_gearbox_h / 2 + 30 * s);
-
+module tilt_drive_core() {
   color([0.60, 0.62, 0.65])
-    translate([side_x, 0, trunnion_axis_z])
-      rotate([0, 90, 0])
-        cylinder(h = tilt_drive_gearbox_h, d = tilt_drive_gearbox_d, center = true);
+    rotate([0, 90, 0])
+      cylinder(h = tilt_drive_gearbox_h, d = tilt_drive_gearbox_d, center = true);
 
   color([0.50, 0.52, 0.55])
-    translate([side_x - side * 120 * s, 0, trunnion_axis_z])
+    translate([-120 * s, 0, 0])
       rotate([0, 90, 0])
         cylinder(h = 220 * s, d = 160 * s, center = true);
 
-  if (SHOW_INTERNALS)
-    translate([side_x, 0, trunnion_axis_z])
+  // Visible torque path from the external gearbox into the trunnion-mounted drive hub.
+  color([0.76, 0.77, 0.79])
+    translate([-tilt_output_shaft_reach / 2, 0, 0])
       rotate([0, 90, 0])
-        planetary_gear_stage_preview(tilt_drive_gearbox_d * 0.86, tilt_drive_gearbox_d * 0.34, tilt_drive_gearbox_h * 0.42, tilt_sun_teeth, tilt_planet_teeth, tilt_ring_teeth);
+        cylinder(h = tilt_output_shaft_reach, d = 110 * s, center = true);
 
-  if (SHOW_MOTORS) {
-    if (side > 0)
-      translate([side_x + side * (tilt_drive_gearbox_h / 2 + tilt_motor_length / 2), 0, trunnion_axis_z])
-        equipment_motor(tilt_motor_length, tilt_motor_width, tilt_motor_height, motor_shaft_diameter, motor_shaft_length);
-    else
+  color([0.62, 0.64, 0.67])
+    translate([-tilt_output_shaft_reach, 0, 0])
+      rotate([0, 90, 0])
+        cylinder(h = 120 * s, d = 210 * s, center = true);
+
+  if (SHOW_INTERNALS)
+    rotate([0, 90, 0])
+      planetary_gear_stage_preview(tilt_drive_gearbox_d * 0.86, tilt_drive_gearbox_d * 0.34, tilt_drive_gearbox_h * 0.42, tilt_sun_teeth, tilt_planet_teeth, tilt_ring_teeth);
+
+  if (SHOW_MOTORS)
+    translate([tilt_drive_gearbox_h / 2 + tilt_motor_length / 2, 0, 0])
+      equipment_motor(tilt_motor_length, tilt_motor_width, tilt_motor_height, motor_shaft_diameter, motor_shaft_length);
+}
+
+module tilt_drive_module(side = 1) {
+  if (side > 0)
+    translate([tilt_drive_center_x, 0, trunnion_axis_z])
+      tilt_drive_core();
+  else
+    translate([-tilt_drive_center_x, 0, trunnion_axis_z])
       mirror([1, 0, 0])
-        translate([-side_x + (tilt_drive_gearbox_h / 2 + tilt_motor_length / 2), 0, trunnion_axis_z])
-          equipment_motor(tilt_motor_length, tilt_motor_width, tilt_motor_height, motor_shaft_diameter, motor_shaft_length);
-  }
+        tilt_drive_core();
 }
 
 module upper_structure_without_payload() {
@@ -597,7 +631,7 @@ module upper_structure_without_payload() {
 // 17. ELECTRONICS HOUSING / 18. PAYLOAD SHELF / 19. CABLE MANAGEMENT
 // -----------------------------------------------------------------------------
 module trunnion_sector(side = 1) {
-  cheek_x = side * (payload_frame_width / 2 + payload_frame_tube / 2);
+  cheek_x = side * payload_cheek_x;
   color([0.55, 0.57, 0.60])
     translate([cheek_x + side * (trunnion_hub_width / 2 + 8 * s), 0, 0])
       rotate([0, 90, 0])
@@ -605,7 +639,7 @@ module trunnion_sector(side = 1) {
 
   if (SHOW_GEARS)
     color([0.66, 0.67, 0.70])
-      translate([cheek_x + side * (trunnion_hub_width + tilt_sector_width / 2), 0, 0])
+      translate([side * tilt_sector_center_x, 0, 0])
         rotate([0, 90, 0])
           external_ring_gear(tilt_sector_od, tilt_sector_id, tilt_sector_width, tilt_sector_teeth, 40 * s);
 }
@@ -652,7 +686,8 @@ module payload_stop_lugs() {
 
 module payload_sweep_envelope() {
   color([1.0, 0.65, 0.20, 0.08])
-    rounded_box([payload_platform_length, payload_platform_width, payload_frame_height + payload_platform_drop * 2], r = 40 * s);
+    scale([1.02, 1.02, 1.02])
+      tilting_payload_group();
 }
 
 module tilting_payload_group() {
@@ -662,10 +697,16 @@ module tilting_payload_group() {
   payload_stop_lugs();
 }
 
+module tilt_pose(angle) {
+  translate([0, 0, trunnion_axis_z])
+    rotate([angle, 0, 0])
+      children();
+}
+
 module tilt_sweep_visualization() {
   // Sampled ghost positions keep the model responsive while still showing the usable sweep envelope.
   for (a = [-90 : 30 : 90])
-    rotate([a, 0, 0])
+    tilt_pose(a)
       payload_sweep_envelope();
 }
 
@@ -676,13 +717,11 @@ module rotating_pan_tilt_assembly(show_payload = true) {
   upper_structure_without_payload();
 
   if (SHOW_TILT_SWEEP)
-    translate([0, 0, trunnion_axis_z])
-      tilt_sweep_visualization();
+    tilt_sweep_visualization();
 
   if (show_payload)
-    translate([0, 0, trunnion_axis_z])
-      rotate([TILT_ANGLE, 0, 0])
-        tilting_payload_group();
+    tilt_pose(TILT_ANGLE)
+      tilting_payload_group();
 
   // Pan-rotating cable riser inside the central passage.
   color([0.16, 0.16, 0.16, 0.85])
@@ -702,10 +741,10 @@ module exploded_view() {
     rotate([0, 0, PAN_ANGLE])
       upper_structure_without_payload();
   if (SHOW_TILT_SWEEP)
-    translate([0, 0, trunnion_axis_z + 520 * s])
+    translate([0, 0, 520 * s])
       tilt_sweep_visualization();
-  translate([0, 0, trunnion_axis_z + 980 * s])
-    rotate([TILT_ANGLE, 0, 0])
+  translate([0, 0, 980 * s])
+    tilt_pose(TILT_ANGLE)
       tilting_payload_group();
 }
 
@@ -725,13 +764,17 @@ module engineering_debug() {
   }
 }
 
+// Console-only validation reminders for concept review; this module emits no geometry
+// and is controlled separately from SHOW_DEBUG by SHOW_VALIDATION_ECHO.
 module validation_debug() {
-  echo("Concept validation reminders");
-  echo("- verify actual bearing selection, bolt preload, and overturning loads");
-  echo("- verify real cable bend radius, slip-ring strategy, and motor cooling");
-  echo("- verify hard-stop energy absorption and stop pad materials");
-  echo("- verify payload CG, duty cycle, and trunnion shaft sizing");
-  echo("- model is conceptual only; no certification or final structural validation is claimed");
+  if (SHOW_VALIDATION_ECHO) {
+    echo("Concept validation reminders");
+    echo("- verify actual bearing selection, bolt preload, and overturning loads");
+    echo("- verify real cable bend radius, slip-ring strategy, and motor cooling");
+    echo("- verify hard-stop energy absorption and stop pad materials");
+    echo("- verify payload CG, duty cycle, and trunnion shaft sizing");
+    echo("- model is conceptual only; no certification or final structural validation is claimed");
+  }
 }
 
 if (SHOW_ASSEMBLY) {
