@@ -64,6 +64,11 @@ CARRIER_PLATE_THICKNESS_MM = 5.0
 CARRIER_MARGIN_MM = 5.0
 INTERSTAGE_GAP_MM = 8.0
 STAGE_SPACING_MM = GEAR_HEIGHT_MM + CARRIER_PLATE_THICKNESS_MM + INTERSTAGE_GAP_MM
+BORE_TOOL_OVERTRAVEL_MM = 1.0
+CARRIER_AXIAL_OVERLAP_MM = 1.0
+CARRIER_SHAFT_EXTRA_HEIGHT_MM = 2.0
+CARRIER_HUB_RADIUS_FROM_SHAFT = 0.75
+CARRIER_HUB_RADIUS_FROM_PIN = 2.0
 
 # Requirement 1: exact 5:1 overall reduction using two fixed-ring planetary stages.
 # Stage 1 ratio = 1 + R1 / S1 = 1 + 90 / 72 = 9/4 = 2.25
@@ -214,9 +219,9 @@ def create_bored_gear(doc, group, gear, name, bore_dia, z_offset, height_mm, col
     # Requirement 5 and 6: bores are made by boolean-cutting a real gear body with a cylinder.
     bore = doc.addObject("Part::Cylinder", name + "_BoreTool")
     bore.Radius = 0.5 * bore_dia
-    bore.Height = height_mm + 2.0
+    bore.Height = height_mm + (2.0 * BORE_TOOL_OVERTRAVEL_MM)
     bore.Placement = App.Placement(
-        App.Vector(gear.Placement.Base.x, gear.Placement.Base.y, z_offset - 1.0),
+        App.Vector(gear.Placement.Base.x, gear.Placement.Base.y, z_offset - BORE_TOOL_OVERTRAVEL_MM),
         App.Rotation(),
     )
     group.addObject(bore)
@@ -243,7 +248,11 @@ def create_stage(doc, stage_name, z_offset, sun_teeth, planet_teeth, ring_teeth,
     center_distance = 0.5 * module * (sun_teeth + planet_teeth)
     planet_outer_radius = 0.5 * module * (planet_teeth + 2.0)
     carrier_outer_radius = center_distance + planet_outer_radius + CARRIER_MARGIN_MM
-    carrier_hub_radius = max(0.75 * INTERSTAGE_SHAFT_DIA_MM, 2.0 * pin_dia)
+    # The center boss is sized from the interstage shaft and pin diameters so parameter edits keep a printable support around the shaft.
+    carrier_hub_radius = max(
+        CARRIER_HUB_RADIUS_FROM_SHAFT * INTERSTAGE_SHAFT_DIA_MM,
+        CARRIER_HUB_RADIUS_FROM_PIN * pin_dia,
+    )
 
     # Requirement 7: center distance and tooth counts are computed from one common module so the stage meshes correctly.
     ring = create_internal_ring(
@@ -254,7 +263,7 @@ def create_stage(doc, stage_name, z_offset, sun_teeth, planet_teeth, ring_teeth,
         module,
         pressure_angle,
         RING_HEIGHT_MM,
-        z_offset - 1.0,
+        z_offset - CARRIER_AXIAL_OVERLAP_MM,
         COLORS["ring"],
     )
 
@@ -321,13 +330,13 @@ def create_stage(doc, stage_name, z_offset, sun_teeth, planet_teeth, ring_teeth,
         planet_pin_locations.append((center.x, center.y))
 
     # Requirement 6: the carrier is a disc plus cylindrical pins on the planet circle.
-    plate_bottom_z = z_offset - CARRIER_PLATE_THICKNESS_MM - 1.0
+    plate_bottom_z = z_offset - CARRIER_PLATE_THICKNESS_MM - CARRIER_AXIAL_OVERLAP_MM
     plate = Part.makeCylinder(carrier_outer_radius, CARRIER_PLATE_THICKNESS_MM)
     plate.translate(App.Vector(0.0, 0.0, plate_bottom_z))
-    hub = Part.makeCylinder(carrier_hub_radius, CARRIER_PLATE_THICKNESS_MM + 2.0)
+    hub = Part.makeCylinder(carrier_hub_radius, CARRIER_PLATE_THICKNESS_MM + CARRIER_SHAFT_EXTRA_HEIGHT_MM)
     hub.translate(App.Vector(0.0, 0.0, plate_bottom_z))
     carrier_shape = plate.fuse(hub)
-    pin_height = gear_height + CARRIER_PLATE_THICKNESS_MM + 2.0
+    pin_height = gear_height + CARRIER_PLATE_THICKNESS_MM + CARRIER_SHAFT_EXTRA_HEIGHT_MM
     output_shaft = Part.makeCylinder(0.5 * INTERSTAGE_SHAFT_DIA_MM, pin_height)
     output_shaft.translate(App.Vector(0.0, 0.0, plate_bottom_z))
     carrier_shape = carrier_shape.fuse(output_shaft)
