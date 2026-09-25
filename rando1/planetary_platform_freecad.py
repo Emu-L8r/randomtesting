@@ -102,7 +102,7 @@ def make_internal_ring_gear(module, ring_teeth, width, phase=0.0):
     root_r_inward = pitch_r + dedendum
     rim_outer_r = root_r_inward + 7.5
 
-    ring_shape = Part.makeCylinder(rim_outer_r, width).cut(Part.makeCylinder(root_r_inward, width))
+    ring_shape = Part.makeCylinder(rim_outer_r, width).cut(Part.makeCylinder(tip_r_inward, width))
 
     circular_pitch = 2.0 * math.pi * pitch_r / ring_teeth
     slot_width = 0.50 * circular_pitch
@@ -247,8 +247,8 @@ z2_sun_bottom = STAGES[1]["z"] - 0.5 * GEAR_WIDTH
 z2_carrier_top = STAGES[1]["z"] + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE + (GEAR_WIDTH * 0.45)
 z3_sun_bottom = STAGES[2]["z"] - 0.5 * GEAR_WIDTH
 
-add_coupler(stage2_group, "Carrier1_to_Sun2_Coupler", z1_carrier_top - 0.2, z2_sun_bottom + 0.2, 2.8)
-add_coupler(stage3_group, "Carrier2_to_Sun3_Coupler", z2_carrier_top - 0.2, z3_sun_bottom + 0.2, 2.6)
+add_coupler(stage1_group, "Carrier1_to_Sun2_Coupler", z1_carrier_top - 0.2, z2_sun_bottom + 0.2, 2.8)
+add_coupler(stage2_group, "Carrier2_to_Sun3_Coupler", z2_carrier_top - 0.2, z3_sun_bottom + 0.2, 2.6)
 
 # Output hub + platform rigid to Stage 3 carrier
 z3_carrier_top = STAGES[2]["z"] + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE + (GEAR_WIDTH * 0.45)
@@ -278,7 +278,8 @@ fixed_race = Part.makeCylinder(bearing_outer_r, bearing_height).cut(Part.makeCyl
 fixed_race.translate(App.Vector(0.0, 0.0, bearing_z))
 add_feature(fixed_group, "OutputBearing_FixedOuterRace", fixed_race, COLORS["fixed_light"])
 
-rotating_race = Part.makeCylinder(inner_race_outer_r, bearing_height).cut(Part.makeCylinder(bearing_inner_r - 1.0, bearing_height))
+rotating_race_inner_r = max(0.5, output_hub_r - 0.6)
+rotating_race = Part.makeCylinder(inner_race_outer_r, bearing_height).cut(Part.makeCylinder(rotating_race_inner_r, bearing_height))
 rotating_race.translate(App.Vector(0.0, 0.0, bearing_z))
 add_feature(output_group, "OutputBearing_RotatingInnerRace", rotating_race, COLORS["rotating"])
 
