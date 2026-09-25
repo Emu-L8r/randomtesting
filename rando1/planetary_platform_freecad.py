@@ -177,7 +177,9 @@ def make_carrier(planet_center_r, planet_tip_r, width, sun_root_r, planet_angles
     if pin_solids:
         plate = plate.multiFuse(pin_solids)
 
-    return plate, plate_thickness
+    carrier_local_bottom_z = -0.5 if pin_solids else 0.0
+    carrier_local_top_z = max(plate_thickness, (pin_h - 0.5) if pin_solids else plate_thickness)
+    return plate, carrier_local_bottom_z, carrier_local_top_z
 
 
 def build_stage_geometry(stage_cfg, stage_phase):
@@ -222,7 +224,7 @@ def build_stage_geometry(stage_cfg, stage_phase):
         planet_shape.translate(App.Vector(offset.x, offset.y, z_center - 0.5 * GEAR_WIDTH))
         planet_shapes.append(planet_shape)
 
-    carrier_shape, plate_thickness = make_carrier(
+    carrier_shape, carrier_local_bottom_z, carrier_local_top_z = make_carrier(
         planet_center_r=planet_center_r,
         planet_tip_r=planet_tip_r,
         width=GEAR_WIDTH,
@@ -242,7 +244,8 @@ def build_stage_geometry(stage_cfg, stage_phase):
         "sun_root_r": sun_root_r,
         "planet_center_r": planet_center_r,
         "planet_tip_r": planet_tip_r,
-        "carrier_plate_top_z": carrier_z + plate_thickness,
+        "carrier_top_z": carrier_z + carrier_local_top_z,
+        "carrier_bottom_z": carrier_z + carrier_local_bottom_z,
         "sun_bottom_z": z_center - 0.5 * GEAR_WIDTH,
         "sun_top_z": z_center + 0.5 * GEAR_WIDTH,
         "min_center_distance": min_center_distance,
@@ -302,17 +305,19 @@ for idx, pl_shape in enumerate(stage1_geom["planets"]):
     add_feature(stage1_group, f"Stage1_Planet_{idx+1}", pl_shape, COLORS["rotating_alt"])
 
 # Real rigid compound coupling: Stage 1 carrier drives Stage 2 sun.
-c12_start = stage1_geom["carrier_plate_top_z"] - 0.2
-c12_end = stage2_geom["sun_bottom_z"] + 0.2
-carrier1_to_sun2_connector = Part.makeCylinder(3.0, max(0.2, c12_end - c12_start))
-carrier1_to_sun2_connector.translate(App.Vector(0.0, 0.0, c12_start))
+c12_anchor_a = stage1_geom["carrier_top_z"]
+c12_anchor_b = stage2_geom["sun_bottom_z"]
+c12_z0 = min(c12_anchor_a, c12_anchor_b)
+c12_z1 = max(c12_anchor_a, c12_anchor_b)
+carrier1_to_sun2_connector = Part.makeCylinder(3.0, max(0.2, c12_z1 - c12_z0))
+carrier1_to_sun2_connector.translate(App.Vector(0.0, 0.0, c12_z0))
 stage12_compound = stage1_geom["carrier"].fuse(carrier1_to_sun2_connector).fuse(stage2_geom["sun"])
 add_feature(stage2_group, "Stage1Carrier_to_Stage2Sun_Rigid", stage12_compound, COLORS["rotating"])
 for idx, pl_shape in enumerate(stage2_geom["planets"]):
     add_feature(stage2_group, f"Stage2_Planet_{idx+1}", pl_shape, COLORS["rotating_alt"])
 
 # Real rigid output coupling: Stage 2 carrier -> output hub -> top platform.
-output_hub_base_z = stage2_geom["carrier_plate_top_z"] - 0.2
+output_hub_base_z = stage2_geom["carrier_top_z"] - 0.2
 platform_z = HOUSING_TOP_Z + 8.0
 output_hub_r = stage2_geom["planet_center_r"] + 0.55 * stage2_geom["planet_tip_r"]
 output_hub = Part.makeCylinder(output_hub_r, platform_z - output_hub_base_z)
