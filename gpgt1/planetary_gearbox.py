@@ -392,10 +392,11 @@ def main():
     )
 
     interstage_group = add_group(doc, "InterstageDrive")
-    coupler_height = max(2.0, stage_2["sun_top_z"] - stage_1["carrier_top_z"])
-    coupler = Part.makeCylinder(0.5 * INTERSTAGE_SHAFT_DIA_MM, coupler_height)
-    coupler.translate(App.Vector(0.0, 0.0, stage_1["carrier_top_z"]))
-    add_shape_feature(doc, interstage_group, "Stage1CarrierToStage2SunCoupler", coupler, COLORS["shaft"])
+    coupler_height = stage_2["sun_top_z"] - stage_1["carrier_top_z"]
+    if coupler_height > 0.0:
+        coupler = Part.makeCylinder(0.5 * INTERSTAGE_SHAFT_DIA_MM, coupler_height)
+        coupler.translate(App.Vector(0.0, 0.0, stage_1["carrier_top_z"]))
+        add_shape_feature(doc, interstage_group, "Stage1CarrierToStage2SunCoupler", coupler, COLORS["shaft"])
 
     # Requirement 1: report the exact fixed-ring reduction math in the model-generation output.
     stage_1_ratio = 1.0 + (STAGE_1["ring"] / float(STAGE_1["sun"]))

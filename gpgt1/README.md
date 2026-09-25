@@ -58,7 +58,7 @@ So the assembly meets the requested **exact 5:1 overall ratio** with **two plane
   - carrier is the output
 - **Stage 2**
   - stage 1 carrier includes a central output shaft on the common axis
-  - an interstage coupler continues that shaft into the stage 2 sun bore
+  - an interstage coupler continues that shaft through the full height of the stage 2 sun bore
   - stage 2 ring is also fixed
   - stage 2 carrier is the final output
 
