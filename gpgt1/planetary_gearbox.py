@@ -4,8 +4,8 @@ Two-stage parametric planetary gearbox generator for FreeCAD.
 
 Run inside FreeCAD with the FreeCAD Gears addon installed:
   - FreeCAD GUI Python console / macro runner
-  - FreeCADCmd
-  - freecad planetary_gearbox.py
+  - FreeCADCmd for headless execution
+  - some installations also support passing the script to the GUI-capable `freecad` launcher
 """
 
 import math
@@ -28,8 +28,9 @@ try:
     import Part
 except ImportError:
     fail(
-        "This script must be run inside FreeCAD (for example with FreeCADCmd, the "
-        "FreeCAD GUI Python console, or `freecad planetary_gearbox.py`)."
+        "This script must be run inside FreeCAD (for example with FreeCADCmd or "
+        "from the FreeCAD GUI Python console / macro runner; some installations "
+        "also accept the script via the `freecad` launcher)."
     )
 
 try:

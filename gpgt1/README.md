@@ -105,7 +105,7 @@ Run it with FreeCAD's Python environment, for example:
 FreeCADCmd /absolute/path/to/gpgt1/planetary_gearbox.py
 ```
 
-or:
+If your local FreeCAD installation supports script arguments on the GUI-capable launcher, you can also try:
 
 ```bash
 freecad /absolute/path/to/gpgt1/planetary_gearbox.py
