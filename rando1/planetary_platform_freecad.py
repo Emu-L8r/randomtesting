@@ -319,5 +319,5 @@ try:
     import FreeCADGui
 
     FreeCADGui.ActiveDocument.ActiveView.fitAll()
-except Exception:
+except (ImportError, AttributeError):
     pass
