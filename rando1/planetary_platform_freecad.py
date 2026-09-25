@@ -316,6 +316,7 @@ stage1_input = stage1_geom["sun"].fuse(input_shaft)
 add_feature(stage1_group, "Stage1_InputSunAndShaft", stage1_input, COLORS["shaft"])
 for idx, pl_shape in enumerate(stage1_geom["planets"]):
     add_feature(stage1_group, f"Stage1_Planet_{idx+1}", pl_shape, COLORS["rotating_alt"])
+add_feature(stage1_group, "Stage1_Carrier", stage1_geom["carrier"].copy(), COLORS["rotating"])
 
 # Real rigid compound coupling: Stage 1 carrier drives Stage 2 sun.
 c12_anchor_a = stage1_geom["carrier_top_z"]
@@ -383,9 +384,10 @@ ratios = [nominal_stage_ratio(cfg) for cfg in STAGES]
 overall_ratio = ratios[0] * ratios[1]
 
 equal_spacing_value = (SUN_TEETH + RING_TEETH) / float(PLANET_COUNT)
+equal_spacing_mode = "equal spacing feasible" if equal_spacing_value.is_integer() else "non-integer => phased slots used"
 print("Two-stage planetary concept generated.")
 print("  Tooth check (R = S + 2P): {} = {} + 2*{}".format(RING_TEETH, SUN_TEETH, PLANET_TEETH))
-print("  Equal-spacing check ((S+R)/N): {}/{} = {:.6f} (non-integer => phased slots used)".format(SUN_TEETH + RING_TEETH, PLANET_COUNT, equal_spacing_value))
+print("  Equal-spacing check ((S+R)/N): {}/{} = {:.6f} ({})".format(SUN_TEETH + RING_TEETH, PLANET_COUNT, equal_spacing_value, equal_spacing_mode))
 print("  Mesh slot count: {}, slot angle: {:.1f} deg, chosen slots: {}".format(PLANET_MESH_SLOT_COUNT, math.degrees(PLANET_SLOT_ANGLE), PLANET_SLOT_INDICES))
 print("  Minimum planet-to-planet tip clearance in each stage: {:.3f} mm".format(min_planet_clearance))
 for i, cfg in enumerate(STAGES):
