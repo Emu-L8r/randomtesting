@@ -20,7 +20,6 @@ The model is a **single compound planetary carrier-output layout** with **6 even
 
 - **Fixed to the housing/base:**
   - lower internal ring gear
-  - upper internal ring gear
   - base plate / housing shell
   - fixed outer bearing race
 - **Input:**
@@ -29,7 +28,7 @@ The model is a **single compound planetary carrier-output layout** with **6 even
   - 6 rigid planet bodies
   - each planet body contains:
     - a **9-tooth primary helical gear** meshing with the input sun and lower fixed ring
-    - a **12-tooth transfer helical gear** stacked on the same shaft as the second member of the compound planet
+    - a **6-tooth smaller transfer helical gear** stacked on the same shaft as the second member of the compound planet
     - a rigid join sleeve / axle tying both gears together as one rotating body
 - **Rotating output:**
   - carrier plate
@@ -37,7 +36,7 @@ The model is a **single compound planetary carrier-output layout** with **6 even
   - top circular platform
   - rotating inner bearing race
 
-The macro also creates a central **transfer-interface sun gear** so the upper compound mesh is shown with real involute geometry from the addon, but the top platform remains rigidly attached to the **carrier/output hub path** rather than reviving the old multi-stage stack.
+The macro intentionally stops at **one real carrier-output planetary mesh** rather than reviving the previous multi-stage stack. The smaller upper gear is still modeled as the rigid compound member on each planet body, ready to serve as the follow-on interface if the concept is extended later.
 
 ## Chosen tooth counts
 
@@ -55,44 +54,34 @@ Checks:
 
 This means the requested **6-planet equal-spacing condition is valid**, so the planets are placed at exact 60° increments.
 
-### Upper transfer mesh on the same compound planets
+### Compound transfer member on the same rigid planet body
 
-- Sun: **18 teeth**
-- Planet: **12 teeth** (the second, smaller transfer member of each compound planet)
-- Ring: **42 teeth**
+- Transfer gear: **6 teeth**
+- Transfer module: **1.5**
 
-Checks:
+This upper member is deliberately **smaller in diameter** than the primary `9-tooth @ module 2.0` gear, so each planet position is visibly a **compound two-gear stack** rather than two adjacent copies of the same pinion.
 
-- `ring = sun + 2 * planet`
-- `42 = 18 + 2 * 12` ✅
-- `(sun + ring) / 6 = (18 + 42) / 6 = 10` ✅
-
-The upper mesh was chosen so the compound planet stays on the **same carrier radius** as the lower mesh with a common module:
-
-- `21 + 9 = 30`
-- `18 + 12 = 30`
-
-So both gears in each compound planet can share one rigid planet shaft/pin.
-The 9-tooth requirement is therefore satisfied by the primary planet pinion at each of the 6 planet locations, while the stacked 12-tooth member provides the required different tooth count/diameter for a true compound planet body.
+The 9-tooth requirement is therefore satisfied by the primary planet pinion at each of the 6 planet locations, while the stacked 6-tooth member provides the required different tooth count/diameter for a true compound planet body.
+Both stacked gears keep one shared keyed body orientation in the macro, so the compound planet is modeled as a single rigid rotating member rather than as two independently phased gears.
 
 ## Helix handedness
 
 All gears use a **22° helix magnitude**.
 
-- sun / rings / transfer-interface sun: **+22°**
+- sun / ring: **+22°**
 - compound planets: **-22°**
 
 That handedness choice follows the usual parallel-axis helical-mesh convention used by the FreeCAD Gears addon: the planet gears are mirrored relative to the sun/ring gears so the meshes are shown with opposite hand where needed.
 
 ## Reduction ratio
 
-The primary carrier-output fixed-ring reduction shown by the macro is:
+For the chosen primary tooth counts, the **theoretical fixed-ring carrier ratio** is:
 
 - `i = 1 + ring/sun = 1 + 39/21 = 2.857142857... : 1`
 
-So the modeled rotating platform is documented as a **2.857143:1 nominal carrier-output reduction** for the main compound planetary stage.
+So the selected `21/9/39` tooth counts correspond to a **2.857143:1 theoretical carrier-output ratio** for the main fixed-ring planetary mesh.
 
-The upper `18/12/42` mesh is included as the compound-planet transfer interface geometry rather than as a reintroduced separate stacked reduction stage.
+The upper `6-tooth @ module 1.5` gear is included as the compound-planet transfer interface geometry rather than as a reintroduced separate stacked reduction stage.
 
 ## FreeCAD document groups
 
