@@ -400,12 +400,13 @@ def main():
         PLANET_PIN_DIA_MM,
     )
 
-    interstage_group = add_group(doc, "InterstageDrive")
     coupler_height = stage_2["sun_top_z"] - stage_1["carrier_top_z"]
     if coupler_height > 0.0:
         coupler = Part.makeCylinder(0.5 * INTERSTAGE_SHAFT_DIA_MM, coupler_height)
         coupler.translate(App.Vector(0.0, 0.0, stage_1["carrier_top_z"]))
-        add_shape_feature(doc, interstage_group, "Stage1CarrierToStage2SunCoupler", coupler, COLORS["shaft"])
+        # Requirement 2 and 3: fuse the interstage coupler into stage 1's carrier so the carrier output is one connected driving body.
+        stage_1["carrier"].Shape = stage_1["carrier"].Shape.fuse(coupler)
+        set_color(stage_1["carrier"], COLORS["carrier"])
 
     # Requirement 1: report the exact fixed-ring reduction math in the model-generation output.
     stage_1_ratio = 1.0 + (STAGE_1["ring"] / float(STAGE_1["sun"]))

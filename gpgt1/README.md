@@ -58,7 +58,7 @@ So the assembly meets the requested **exact 5:1 overall ratio** with **two plane
   - carrier is the output
 - **Stage 2**
   - stage 1 carrier includes a central output shaft on the common axis
-  - an interstage coupler continues that shaft through the stage 2 sun bore up to the sun's top face
+  - the interstage coupler is fused into that same stage 1 carrier body and continues through the stage 2 sun bore up to the sun's top face
   - stage 2 ring is also fixed
   - stage 2 carrier is the final output
 
@@ -118,7 +118,7 @@ freecad /absolute/path/to/gpgt1/planetary_gearbox.py
 The script:
 
 - creates a new document named `TwoStagePlanetaryGearbox`
-- builds `Stage1`, `Stage2`, and `InterstageDrive` groups
+- builds `Stage1` and `Stage2` groups
 - recomputes the document
 - attempts to save `gpgt1/planetary_gearbox.FCStd`
 
