@@ -318,7 +318,7 @@ c12_z0 = min(c12_anchor_a, c12_anchor_b)
 c12_z1 = max(c12_anchor_a, c12_anchor_b)
 carrier1_to_sun2_connector = Part.makeCylinder(3.0, max(0.2, c12_z1 - c12_z0))
 carrier1_to_sun2_connector.translate(App.Vector(0.0, 0.0, c12_z0))
-stage12_compound = stage1_geom["carrier"].fuse(carrier1_to_sun2_connector).fuse(stage2_geom["sun"])
+stage12_compound = stage1_geom["carrier"].copy().fuse(carrier1_to_sun2_connector).fuse(stage2_geom["sun"].copy())
 add_feature(stage2_group, "Stage1Carrier_to_Stage2Sun_Rigid", stage12_compound, COLORS["rotating"])
 for idx, pl_shape in enumerate(stage2_geom["planets"]):
     add_feature(stage2_group, f"Stage2_Planet_{idx+1}", pl_shape, COLORS["rotating_alt"])
@@ -331,7 +331,7 @@ output_hub = Part.makeCylinder(output_hub_r, platform_z - output_hub_base_z)
 output_hub.translate(App.Vector(0.0, 0.0, output_hub_base_z))
 platform = Part.makeCylinder(max_ring_outer + 12.0, PLATFORM_THICKNESS)
 platform.translate(App.Vector(0.0, 0.0, platform_z))
-stage2_output_compound = stage2_geom["carrier"].fuse(output_hub).fuse(platform)
+stage2_output_compound = stage2_geom["carrier"].copy().fuse(output_hub).fuse(platform)
 add_feature(output_group, "Stage2Carrier_OutputHub_TopPlatform_Rigid", stage2_output_compound, COLORS["platform"])
 
 # Annular output bearing depiction between fixed housing and rotating output.
