@@ -59,6 +59,7 @@ RING_HEIGHT_MM = 10.0
 RING_RIM_THICKNESS_MM = 7.0
 SUN_BORE_DIA_MM = 8.0
 PLANET_PIN_DIA_MM = 2.4
+INTERSTAGE_SHAFT_DIA_MM = 5.0
 CARRIER_PLATE_THICKNESS_MM = 5.0
 CARRIER_MARGIN_MM = 5.0
 INTERSTAGE_GAP_MM = 8.0
@@ -242,7 +243,7 @@ def create_stage(doc, stage_name, z_offset, sun_teeth, planet_teeth, ring_teeth,
     center_distance = 0.5 * module * (sun_teeth + planet_teeth)
     planet_outer_radius = 0.5 * module * (planet_teeth + 2.0)
     carrier_outer_radius = center_distance + planet_outer_radius + CARRIER_MARGIN_MM
-    carrier_hub_radius = max(bore_dia, 2.5 * pin_dia)
+    carrier_hub_radius = max(0.75 * INTERSTAGE_SHAFT_DIA_MM, 2.0 * pin_dia)
 
     # Requirement 7: center distance and tooth counts are computed from one common module so the stage meshes correctly.
     ring = create_internal_ring(
@@ -327,6 +328,9 @@ def create_stage(doc, stage_name, z_offset, sun_teeth, planet_teeth, ring_teeth,
     hub.translate(App.Vector(0.0, 0.0, plate_bottom_z))
     carrier_shape = plate.fuse(hub)
     pin_height = gear_height + CARRIER_PLATE_THICKNESS_MM + 2.0
+    output_shaft = Part.makeCylinder(0.5 * INTERSTAGE_SHAFT_DIA_MM, pin_height)
+    output_shaft.translate(App.Vector(0.0, 0.0, plate_bottom_z))
+    carrier_shape = carrier_shape.fuse(output_shaft)
     for pin_x, pin_y in planet_pin_locations:
         pin = Part.makeCylinder(0.5 * pin_dia, pin_height)
         pin.translate(App.Vector(pin_x, pin_y, plate_bottom_z))
@@ -343,7 +347,6 @@ def create_stage(doc, stage_name, z_offset, sun_teeth, planet_teeth, ring_teeth,
         "carrier": carrier,
         "center_distance": center_distance,
         "plate_top_z": plate_bottom_z + CARRIER_PLATE_THICKNESS_MM,
-        "hub_top_z": plate_bottom_z + CARRIER_PLATE_THICKNESS_MM + 2.0,
         "carrier_top_z": plate_bottom_z + pin_height,
         "sun_base_z": z_offset,
         "sun_top_z": z_offset + gear_height,
@@ -389,9 +392,9 @@ def main():
     )
 
     interstage_group = add_group(doc, "InterstageDrive")
-    coupler_height = max(2.0, stage_2["sun_top_z"] - stage_1["hub_top_z"])
-    coupler = Part.makeCylinder(0.5 * SUN_BORE_DIA_MM, coupler_height)
-    coupler.translate(App.Vector(0.0, 0.0, stage_1["hub_top_z"]))
+    coupler_height = max(2.0, stage_2["sun_top_z"] - stage_1["carrier_top_z"])
+    coupler = Part.makeCylinder(0.5 * INTERSTAGE_SHAFT_DIA_MM, coupler_height)
+    coupler.translate(App.Vector(0.0, 0.0, stage_1["carrier_top_z"]))
     add_shape_feature(doc, interstage_group, "Stage1CarrierToStage2SunCoupler", coupler, COLORS["shaft"])
 
     # Requirement 1: report the exact fixed-ring reduction math in the model-generation output.

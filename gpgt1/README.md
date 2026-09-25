@@ -57,8 +57,8 @@ So the assembly meets the requested **exact 5:1 overall ratio** with **two plane
   - ring gear is fixed to the housing
   - carrier is the output
 - **Stage 2**
-  - stage 1 carrier is represented by the interstage coupler on the common axis
-  - that coupler drives the stage 2 sun
+  - stage 1 carrier includes a central output shaft on the common axis
+  - an interstage coupler continues that shaft into the stage 2 sun bore
   - stage 2 ring is also fixed
   - stage 2 carrier is the final output
 
@@ -75,6 +75,7 @@ At the top of `gpgt1/planetary_gearbox.py` you can adjust:
 - `RING_HEIGHT_MM`
 - `SUN_BORE_DIA_MM`
 - `PLANET_PIN_DIA_MM`
+- `INTERSTAGE_SHAFT_DIA_MM`
 - `CARRIER_PLATE_THICKNESS_MM`
 - `INTERSTAGE_GAP_MM`
 - `STAGE_1` and `STAGE_2` tooth counts
@@ -85,6 +86,7 @@ At the top of `gpgt1/planetary_gearbox.py` you can adjust:
 - The **planet gears** get a center bore the same nominal diameter as the carrier pin.
 - Each **carrier** is modeled as a plate/disc with **cylindrical pins** located on the planet circle radius.
 - Those pins pass through the matching planet bores in the static CAD assembly.
+- The carrier also includes a smaller-diameter **central output shaft**, and the interstage coupler continues that shaft into the second sun bore.
 
 If you need manufacturing clearance, slightly increase the planet bore diameter or slightly reduce the pin diameter.
 
