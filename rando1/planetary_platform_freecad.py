@@ -77,6 +77,18 @@ def polar_xy(radius, angle_rad):
     return App.Vector(radius * math.cos(angle_rad), radius * math.sin(angle_rad), 0.0)
 
 
+def min_center_spacing_on_radius(radius, angles):
+    min_dist = None
+    for i in range(len(angles)):
+        for j in range(i + 1, len(angles)):
+            dtheta = abs(angles[i] - angles[j])
+            dtheta = min(dtheta, (2.0 * math.pi) - dtheta)
+            distance = 2.0 * radius * math.sin(0.5 * dtheta)
+            if min_dist is None or distance < min_dist:
+                min_dist = distance
+    return min_dist
+
+
 def add_feature(group, name, shape, color, transparency=0):
     obj = DOC.addObject("Part::Feature", name)
     obj.Shape = shape
@@ -195,15 +207,17 @@ def build_stage_geometry(stage_cfg, stage_phase):
         # Phase planet teeth from sun mesh at this angular position. Because theta
         # is chosen from valid mesh slots, this phase is also compatible with the
         # fixed-ring mesh for the same planet.
-        planet_phase = -(sun_teeth / float(planet_teeth)) * theta
+        planet_world_phase = -(sun_teeth / float(planet_teeth)) * theta
+        planet_local_phase = planet_world_phase - theta
         planet_shape, _, _, stage_planet_tip_r = make_external_gear(
             module=module,
             teeth=planet_teeth,
             width=GEAR_WIDTH,
-            phase=planet_phase,
+            phase=planet_local_phase,
             bore_radius=1.8,
         )
         planet_tip_r = stage_planet_tip_r
+        planet_shape.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), math.degrees(theta))
         offset = polar_xy(planet_center_r, theta)
         planet_shape.translate(App.Vector(offset.x, offset.y, z_center - 0.5 * GEAR_WIDTH))
         planet_shapes.append(planet_shape)
@@ -217,6 +231,8 @@ def build_stage_geometry(stage_cfg, stage_phase):
     )
     carrier_z = z_center + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE
     carrier_shape.translate(App.Vector(0.0, 0.0, carrier_z))
+    min_center_distance = min_center_spacing_on_radius(planet_center_r, planet_angles)
+    min_tip_clearance = min_center_distance - (2.0 * planet_tip_r)
 
     return {
         "sun": sun_shape,
@@ -229,6 +245,8 @@ def build_stage_geometry(stage_cfg, stage_phase):
         "carrier_plate_top_z": carrier_z + plate_thickness,
         "sun_bottom_z": z_center - 0.5 * GEAR_WIDTH,
         "sun_top_z": z_center + 0.5 * GEAR_WIDTH,
+        "min_center_distance": min_center_distance,
+        "min_tip_clearance": min_tip_clearance,
     }
 
 
@@ -336,10 +354,12 @@ ratios = [nominal_stage_ratio(cfg) for cfg in STAGES]
 overall_ratio = ratios[0] * ratios[1]
 
 equal_spacing_value = (SUN_TEETH + RING_TEETH) / float(PLANET_COUNT)
+min_planet_clearance = min(stage1_geom["min_tip_clearance"], stage2_geom["min_tip_clearance"])
 print("Two-stage planetary concept generated.")
 print("  Tooth check (R = S + 2P): {} = {} + 2*{}".format(RING_TEETH, SUN_TEETH, PLANET_TEETH))
 print("  Equal-spacing check ((S+R)/N): {}/{} = {:.6f} (non-integer => phased slots used)".format(SUN_TEETH + RING_TEETH, PLANET_COUNT, equal_spacing_value))
 print("  Mesh slot count: {}, slot angle: {:.1f} deg, chosen slots: {}".format(PLANET_MESH_SLOT_COUNT, math.degrees(PLANET_SLOT_ANGLE), PLANET_SLOT_INDICES))
+print("  Minimum planet-to-planet tip clearance in each stage: {:.3f} mm".format(min_planet_clearance))
 for i, cfg in enumerate(STAGES):
     print(
         "  {}: m={:.2f}, S={}, P={}, R={}, nominal i={:.6f}:1".format(
