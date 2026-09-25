@@ -80,12 +80,16 @@ def make_external_gear(module, teeth, width, phase=0.0, bore_radius=0.0):
     tooth_width = 0.52 * circular_pitch
 
     gear_shape = Part.makeCylinder(root_r, width)
+    tooth_solids = []
     for t in range(teeth):
         ang = phase + (2.0 * math.pi * t / teeth)
         tooth = Part.makeBox(tooth_depth, tooth_width, width)
         tooth.translate(App.Vector(root_r, -0.5 * tooth_width, 0.0))
         tooth.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), math.degrees(ang))
-        gear_shape = gear_shape.fuse(tooth)
+        tooth_solids.append(tooth)
+
+    if tooth_solids:
+        gear_shape = gear_shape.multiFuse(tooth_solids)
 
     if bore_radius > 0.0:
         bore = Part.makeCylinder(bore_radius, width + 0.4)
@@ -103,18 +107,22 @@ def make_internal_ring_gear(module, ring_teeth, width, phase=0.0):
     root_r_inward = pitch_r + dedendum
     rim_outer_r = root_r_inward + 7.5
 
-    ring_shape = Part.makeCylinder(rim_outer_r, width).cut(Part.makeCylinder(root_r_inward, width))
+    ring_shape = Part.makeCylinder(rim_outer_r, width).cut(Part.makeCylinder(tip_r_inward, width))
 
     circular_pitch = 2.0 * math.pi * pitch_r / ring_teeth
-    tooth_width = 0.50 * circular_pitch
-    tooth_depth = max(0.8, root_r_inward - tip_r_inward)
+    slot_width = 0.50 * circular_pitch
+    slot_depth = max(0.8, root_r_inward - tip_r_inward)
 
+    slot_solids = []
     for t in range(ring_teeth):
         ang = phase + (2.0 * math.pi * t / ring_teeth)
-        tooth = Part.makeBox(tooth_depth, tooth_width, width)
-        tooth.translate(App.Vector(tip_r_inward, -0.5 * tooth_width, 0.0))
-        tooth.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), math.degrees(ang))
-        ring_shape = ring_shape.fuse(tooth)
+        slot = Part.makeBox(slot_depth, slot_width, width + 0.2)
+        slot.translate(App.Vector(tip_r_inward, -0.5 * slot_width, -0.1))
+        slot.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), math.degrees(ang))
+        slot_solids.append(slot)
+
+    if slot_solids:
+        ring_shape = ring_shape.cut(Part.makeCompound(slot_solids))
 
     return ring_shape, pitch_r, root_r_inward, rim_outer_r
 
@@ -122,9 +130,10 @@ def make_internal_ring_gear(module, ring_teeth, width, phase=0.0):
 def make_carrier(planet_center_r, planet_tip_r, width, sun_root_r):
     plate_thickness = width * 0.45
     outer_r = planet_center_r + 0.72 * planet_tip_r
-    inner_r = max(2.5, sun_root_r + 1.0)
-
-    plate = Part.makeCylinder(outer_r, plate_thickness).cut(Part.makeCylinder(inner_r, plate_thickness))
+    hub_r = max(3.2, 0.24 * sun_root_r)
+    plate = Part.makeCylinder(outer_r, plate_thickness)
+    hub = Part.makeCylinder(hub_r, plate_thickness)
+    plate = plate.fuse(hub)
 
     pin_r = 1.5
     pin_h = width + 2.0
