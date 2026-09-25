@@ -102,18 +102,18 @@ def make_internal_ring_gear(module, ring_teeth, width, phase=0.0):
     root_r_inward = pitch_r + dedendum
     rim_outer_r = root_r_inward + 7.5
 
-    ring_shape = Part.makeCylinder(rim_outer_r, width).cut(Part.makeCylinder(tip_r_inward, width))
+    ring_shape = Part.makeCylinder(rim_outer_r, width).cut(Part.makeCylinder(root_r_inward, width))
 
     circular_pitch = 2.0 * math.pi * pitch_r / ring_teeth
-    slot_width = 0.50 * circular_pitch
-    slot_depth = max(0.8, root_r_inward - tip_r_inward)
+    tooth_width = 0.50 * circular_pitch
+    tooth_depth = max(0.8, root_r_inward - tip_r_inward)
 
     for t in range(ring_teeth):
         ang = phase + (2.0 * math.pi * t / ring_teeth)
-        slot = Part.makeBox(slot_depth, slot_width, width + 0.2)
-        slot.translate(App.Vector(tip_r_inward, -0.5 * slot_width, -0.1))
-        slot.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), math.degrees(ang))
-        ring_shape = ring_shape.cut(slot)
+        tooth = Part.makeBox(tooth_depth, tooth_width, width)
+        tooth.translate(App.Vector(tip_r_inward, -0.5 * tooth_width, 0.0))
+        tooth.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), math.degrees(ang))
+        ring_shape = ring_shape.fuse(tooth)
 
     return ring_shape, pitch_r, root_r_inward, rim_outer_r
 
@@ -166,6 +166,7 @@ def make_stage_rotating_members(stage_cfg, group, phase):
         ang = math.radians(120.0 * idx + 15.0)
         offset = polar_xy(planet_center_r, ang)
         pl_shape = planet_shape_proto.copy()
+        pl_shape.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), math.degrees(ang))
         pl_shape.translate(App.Vector(offset.x, offset.y, z_center - 0.5 * GEAR_WIDTH))
         add_feature(group, f"{stage_cfg['name']}_Planet_{idx+1}", pl_shape, COLORS["rotating_alt"])
 
@@ -248,8 +249,8 @@ z2_sun_bottom = STAGES[1]["z"] - 0.5 * GEAR_WIDTH
 z2_carrier_top = STAGES[1]["z"] + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE + (GEAR_WIDTH * 0.45)
 z3_sun_bottom = STAGES[2]["z"] - 0.5 * GEAR_WIDTH
 
-add_coupler(coupler_group, "Carrier1_to_Sun2_Coupler", z1_carrier_top - 0.2, z2_sun_bottom + 0.2, 2.8)
-add_coupler(coupler_group, "Carrier2_to_Sun3_Coupler", z2_carrier_top - 0.2, z3_sun_bottom + 0.2, 2.6)
+add_coupler(coupler_group, "Carrier1_to_Sun2_Coupler", z1_carrier_top - 1.2, z2_sun_bottom + 1.2, 2.8)
+add_coupler(coupler_group, "Carrier2_to_Sun3_Coupler", z2_carrier_top - 1.2, z3_sun_bottom + 1.2, 2.6)
 
 # Output hub + platform rigid to Stage 3 carrier
 z3_carrier_top = STAGES[2]["z"] + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE + (GEAR_WIDTH * 0.45)
