@@ -217,6 +217,7 @@ stage1_group = DOC.addObject("App::DocumentObjectGroup", "Stage1")
 stage2_group = DOC.addObject("App::DocumentObjectGroup", "Stage2")
 stage3_group = DOC.addObject("App::DocumentObjectGroup", "Stage3")
 output_group = DOC.addObject("App::DocumentObjectGroup", "RotatingOutput")
+bearing_elements_group = DOC.addObject("App::DocumentObjectGroup", "BearingRollingElements")
 
 stage_groups = [stage1_group, stage2_group, stage3_group]
 
@@ -282,7 +283,7 @@ for idx in range(14):
     center = polar_xy(bearing_inner_r + 0.5, ball_angle)
     ball = Part.makeSphere(0.9)
     ball.translate(App.Vector(center.x, center.y, bearing_z + 0.5 * bearing_height))
-    add_feature(fixed_group, f"OutputBearing_Ball_{idx+1}", ball, (0.78, 0.80, 0.84))
+    add_feature(bearing_elements_group, f"OutputBearing_Ball_{idx+1}", ball, (0.78, 0.80, 0.84))
 
 DOC.recompute()
 
