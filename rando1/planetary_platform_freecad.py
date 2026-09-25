@@ -297,7 +297,7 @@ for idx, pl_shape in enumerate(stage2_geom["planets"]):
 output_hub_base_z = stage2_geom["carrier_plate_top_z"] - 0.2
 platform_z = HOUSING_TOP_Z + 8.0
 output_hub_r = stage2_geom["planet_center_r"] + 0.55 * stage2_geom["planet_tip_r"]
-output_hub = Part.makeCylinder(output_hub_r, (platform_z + PLATFORM_THICKNESS) - output_hub_base_z)
+output_hub = Part.makeCylinder(output_hub_r, platform_z - output_hub_base_z)
 output_hub.translate(App.Vector(0.0, 0.0, output_hub_base_z))
 platform = Part.makeCylinder(max_ring_outer + 12.0, PLATFORM_THICKNESS)
 platform.translate(App.Vector(0.0, 0.0, platform_z))
