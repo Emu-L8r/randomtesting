@@ -370,17 +370,23 @@ def create_stage(doc, stage_name, z_offset, sun_teeth, planet_teeth, ring_teeth,
     }
 
 
-def create_output_platform(doc, stage_group, carrier_obj, z_offset, platform_dia, platform_thickness, pin_dia, num_planets):
-    # Final rotating output turntable: this disc is rigidly attached to stage 2 carrier pins.
-    if platform_dia <= 0.0 or platform_thickness <= 0.0:
+def create_carrier_output_platform(
+    doc, stage_group, carrier_obj, z_offset, support_base_z, platform_dia, platform_thickness, fuse_overlap
+):
+    # Final rotating output turntable attached to a carrier: this disc is rigidly fused to the carrier pin tops.
+    if platform_dia <= 0.0 or platform_thickness <= 0.0 or fuse_overlap < 0.0:
         return carrier_obj
-    if pin_dia <= 0.0 or num_planets < 1:
-        raise ValueError("Output platform requires positive pin diameter and at least one planet")
-    platform = Part.makeCylinder(
-        0.5 * platform_dia, platform_thickness + OUTPUT_PLATFORM_FUSE_OVERLAP_MM
+    platform = Part.makeCylinder(0.5 * platform_dia, platform_thickness + fuse_overlap)
+    platform.translate(App.Vector(0.0, 0.0, z_offset - fuse_overlap))
+    # Add a coaxial post so the platform is continuous with the carrier hub/plate body, not only pin-supported.
+    support_post_radius = max(
+        0.5 * INTERSTAGE_SHAFT_DIA_MM,
+        CARRIER_HUB_RADIUS_FROM_SHAFT * INTERSTAGE_SHAFT_DIA_MM,
     )
-    platform.translate(App.Vector(0.0, 0.0, z_offset - OUTPUT_PLATFORM_FUSE_OVERLAP_MM))
-    output_shape = carrier_obj.Shape.fuse(platform)
+    support_post_height = max(0.0, z_offset - support_base_z) + fuse_overlap
+    support_post = Part.makeCylinder(support_post_radius, support_post_height)
+    support_post.translate(App.Vector(0.0, 0.0, support_base_z))
+    output_shape = carrier_obj.Shape.fuse(platform).fuse(support_post)
     output_carrier = add_shape_feature(
         doc,
         stage_group,
@@ -389,7 +395,6 @@ def create_output_platform(doc, stage_group, carrier_obj, z_offset, platform_dia
         COLORS["carrier"],
     )
     hide_if_possible(carrier_obj)
-    doc.recompute()
     return output_carrier
 
 
@@ -426,15 +431,15 @@ def main():
         SUN_BORE_DIA_MM,
         PLANET_PIN_DIA_MM,
     )
-    stage_2["output_platform"] = create_output_platform(
+    stage_2["output_platform"] = create_carrier_output_platform(
         doc,
         stage_2["group"],
         stage_2["carrier"],
         stage_2["carrier_top_z"],
+        stage_2["plate_top_z"],
         OUTPUT_PLATFORM_DIA_MM,
         OUTPUT_PLATFORM_THICKNESS_MM,
-        PLANET_PIN_DIA_MM,
-        STAGE2_NUM_PLANETS,
+        OUTPUT_PLATFORM_FUSE_OVERLAP_MM,
     )
     stage_2["carrier"] = stage_2["output_platform"]
 

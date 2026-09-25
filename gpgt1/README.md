@@ -31,6 +31,8 @@ Checks:
 
 - `ring = sun + 2 * planet`
 - `120 = 96 + 2 * 12` ✅
+- Planet placement rule used by the generator for any stage: `(sun + ring) / planets` must be an integer.
+- Stage 1 check: `(96 + 120) / 3 = 72` ✅
 - `stage_1_ratio = 1 + 120 / 96 = 9/4 = 2.25 : 1`
 
 ### Stage 2
@@ -44,6 +46,8 @@ Checks:
 
 - `ring = sun + 2 * planet`
 - `132 = 108 + 2 * 12` ✅
+- Stage 2 check of the same placement rule: `(108 + 132) / 6 = 240 / 6 = 40` ✅
+- The script uses that integer spacing index with `planet_index = 0..5`, producing six equal angular steps (`360° / 6 = 60°`). ✅
 - `stage_2_ratio = 1 + 132 / 108 = 20/9 = 2.222222... : 1`
 
 ### Overall reduction
@@ -85,6 +89,7 @@ At the top of `gpgt1/planetary_gearbox.py` you can adjust:
 - `STAGE_1` and `STAGE_2` tooth counts
 - `OUTPUT_PLATFORM_DIA_MM`
 - `OUTPUT_PLATFORM_THICKNESS_MM`
+- `OUTPUT_PLATFORM_FUSE_OVERLAP_MM`
 
 ## Bore and pin details
 
