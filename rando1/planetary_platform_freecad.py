@@ -271,6 +271,12 @@ stage2_phase = math.radians(7.0)
 
 stage1_geom = build_stage_geometry(STAGES[0], stage1_phase)
 stage2_geom = build_stage_geometry(STAGES[1], stage2_phase)
+min_planet_clearance = min(stage1_geom["min_tip_clearance"], stage2_geom["min_tip_clearance"])
+if min_planet_clearance < 0.0:
+    raise ValueError(
+        "Chosen 11-planet phased slot arrangement produces overlap "
+        "(minimum tip clearance {:.3f} mm).".format(min_planet_clearance)
+    )
 
 # Fixed ring gears are part of the fixed housing in both stages.
 for idx, cfg in enumerate(STAGES):
@@ -303,6 +309,7 @@ stage1_input = stage1_geom["sun"].fuse(input_shaft)
 add_feature(stage1_group, "Stage1_InputSunAndShaft", stage1_input, COLORS["shaft"])
 for idx, pl_shape in enumerate(stage1_geom["planets"]):
     add_feature(stage1_group, f"Stage1_Planet_{idx+1}", pl_shape, COLORS["rotating_alt"])
+add_feature(stage1_group, "Stage1_Carrier", stage1_geom["carrier"], COLORS["rotating"])
 
 # Real rigid compound coupling: Stage 1 carrier drives Stage 2 sun.
 c12_anchor_a = stage1_geom["carrier_top_z"]
@@ -359,7 +366,6 @@ ratios = [nominal_stage_ratio(cfg) for cfg in STAGES]
 overall_ratio = ratios[0] * ratios[1]
 
 equal_spacing_value = (SUN_TEETH + RING_TEETH) / float(PLANET_COUNT)
-min_planet_clearance = min(stage1_geom["min_tip_clearance"], stage2_geom["min_tip_clearance"])
 print("Two-stage planetary concept generated.")
 print("  Tooth check (R = S + 2P): {} = {} + 2*{}".format(RING_TEETH, SUN_TEETH, PLANET_TEETH))
 print("  Equal-spacing check ((S+R)/N): {}/{} = {:.6f} (non-integer => phased slots used)".format(SUN_TEETH + RING_TEETH, PLANET_COUNT, equal_spacing_value))

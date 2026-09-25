@@ -42,7 +42,7 @@ So the script uses a **phased/unequal angular arrangement** on valid mesh-index 
 - valid slot angle: `Δθ = 2π * P / (S + R) = 18°`
 - total valid slots around 360°: `20`
 - planets are placed on 11 selected valid slots, which keeps each planet tooth phase compatible with both sun and fixed ring meshes.
-- the script also computes and prints the minimum center spacing and tip-clearance check for the chosen arrangement.
+- the script computes the minimum center spacing and tip-clearance for the chosen arrangement and raises an error if tip clearance is negative.
 
 ## Document groups
 
