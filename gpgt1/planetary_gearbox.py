@@ -53,7 +53,8 @@ SAVE_PATH = os.path.join(SCRIPT_DIR, "planetary_gearbox.FCStd")
 # -----------------
 MODULE_MM = 1.0
 PRESSURE_ANGLE_DEG = 20.0
-NUM_PLANETS = 3
+STAGE1_NUM_PLANETS = 3
+STAGE2_NUM_PLANETS = 6
 GEAR_HEIGHT_MM = 8.0
 RING_HEIGHT_MM = 10.0
 RING_RIM_THICKNESS_MM = 7.0
@@ -69,13 +70,16 @@ CARRIER_AXIAL_OVERLAP_MM = 1.0
 CARRIER_SHAFT_EXTRA_HEIGHT_MM = 2.0
 CARRIER_HUB_RADIUS_FROM_SHAFT = 0.75
 CARRIER_HUB_RADIUS_FROM_PIN = 2.0
+OUTPUT_PLATFORM_DIA_MM = 160.0
+OUTPUT_PLATFORM_THICKNESS_MM = 6.0
+OUTPUT_PLATFORM_FUSE_OVERLAP_MM = 0.5
 
 # Requirement 1: exact 5:1 overall reduction using two fixed-ring planetary stages.
-# Stage 1 ratio = 1 + R1 / S1 = 1 + 90 / 72 = 9/4 = 2.25
-# Stage 2 ratio = 1 + R2 / S2 = 1 + 99 / 81 = 20/9 = 2.222222...
+# Stage 1 ratio = 1 + R1 / S1 = 1 + 120 / 96 = 9/4 = 2.25
+# Stage 2 ratio = 1 + R2 / S2 = 1 + 132 / 108 = 20/9 = 2.222222...
 # Overall ratio = (9/4) * (20/9) = 5 exactly
-STAGE_1 = {"sun": 72, "planet": 9, "ring": 90}
-STAGE_2 = {"sun": 81, "planet": 9, "ring": 99}
+STAGE_1 = {"sun": 96, "planet": 12, "ring": 120}
+STAGE_2 = {"sun": 108, "planet": 12, "ring": 132}
 
 COLORS = {
     "sun": (0.92, 0.67, 0.22),
@@ -362,8 +366,36 @@ def create_stage(doc, stage_name, z_offset, sun_teeth, planet_teeth, ring_teeth,
         "pitch_radius_ring": pitch_radius_ring,
         "pitch_radius_sun": pitch_radius_sun,
         "pitch_radius_planet": pitch_radius_planet,
+        "num_planets": num_planets,
     }
 
+
+def create_carrier_output_platform(
+    doc, stage_group, carrier_obj, z_offset, support_base_z, platform_dia, platform_thickness, fuse_overlap
+):
+    # Final rotating output turntable attached to a carrier: this disc is rigidly fused to the carrier pin tops.
+    if platform_dia <= 0.0 or platform_thickness <= 0.0 or fuse_overlap < 0.0:
+        return carrier_obj
+    platform = Part.makeCylinder(0.5 * platform_dia, platform_thickness + fuse_overlap)
+    platform.translate(App.Vector(0.0, 0.0, z_offset - fuse_overlap))
+    # Add a coaxial post so the platform is continuous with the carrier hub/plate body, not only pin-supported.
+    support_post_radius = max(
+        0.5 * INTERSTAGE_SHAFT_DIA_MM,
+        CARRIER_HUB_RADIUS_FROM_SHAFT * INTERSTAGE_SHAFT_DIA_MM,
+    )
+    support_post_height = max(0.0, z_offset - support_base_z) + fuse_overlap
+    support_post = Part.makeCylinder(support_post_radius, support_post_height)
+    support_post.translate(App.Vector(0.0, 0.0, support_base_z))
+    output_shape = carrier_obj.Shape.fuse(platform).fuse(support_post)
+    output_carrier = add_shape_feature(
+        doc,
+        stage_group,
+        "{}_Output".format(carrier_obj.Name),
+        output_shape,
+        COLORS["carrier"],
+    )
+    hide_if_possible(carrier_obj)
+    return output_carrier
 
 
 def main():
@@ -378,7 +410,7 @@ def main():
         STAGE_1["sun"],
         STAGE_1["planet"],
         STAGE_1["ring"],
-        NUM_PLANETS,
+        STAGE1_NUM_PLANETS,
         MODULE_MM,
         PRESSURE_ANGLE_DEG,
         GEAR_HEIGHT_MM,
@@ -392,13 +424,24 @@ def main():
         STAGE_2["sun"],
         STAGE_2["planet"],
         STAGE_2["ring"],
-        NUM_PLANETS,
+        STAGE2_NUM_PLANETS,
         MODULE_MM,
         PRESSURE_ANGLE_DEG,
         GEAR_HEIGHT_MM,
         SUN_BORE_DIA_MM,
         PLANET_PIN_DIA_MM,
     )
+    stage_2["output_platform"] = create_carrier_output_platform(
+        doc,
+        stage_2["group"],
+        stage_2["carrier"],
+        stage_2["carrier_top_z"],
+        stage_2["plate_top_z"],
+        OUTPUT_PLATFORM_DIA_MM,
+        OUTPUT_PLATFORM_THICKNESS_MM,
+        OUTPUT_PLATFORM_FUSE_OVERLAP_MM,
+    )
+    stage_2["carrier"] = stage_2["output_platform"]
 
     interstage_group = add_group(doc, "InterstageDrive")
     coupler_height = stage_2["sun_top_z"] - stage_1["carrier_top_z"]
@@ -417,12 +460,15 @@ def main():
     print("Generated two-stage planetary gearbox document: {}".format(doc.Name))
     print("  Stage 1 teeth (sun / planet / ring): {sun} / {planet} / {ring}".format(**STAGE_1))
     print("  Stage 2 teeth (sun / planet / ring): {sun} / {planet} / {ring}".format(**STAGE_2))
+    print("  Stage 1 planet count: {}".format(stage_1["num_planets"]))
+    print("  Stage 2 planet count: {}".format(stage_2["num_planets"]))
     print("  Stage 1 ratio = 1 + {ring}/{sun} = {:.6f}:1".format(stage_1_ratio, **STAGE_1))
     print("  Stage 2 ratio = 1 + {ring}/{sun} = {:.6f}:1".format(stage_2_ratio, **STAGE_2))
     print("  Overall reduction = {:.6f}:1".format(total_ratio))
     print("  Shared module = {:.3f} mm, pressure angle = {:.1f} deg".format(MODULE_MM, PRESSURE_ANGLE_DEG))
     print("  Stage 1 planet center distance = {:.3f} mm".format(stage_1["center_distance"]))
     print("  Stage 2 planet center distance = {:.3f} mm".format(stage_2["center_distance"]))
+    print("  Stage 2 output platform diameter = {:.3f} mm".format(OUTPUT_PLATFORM_DIA_MM))
 
     try:
         doc.saveAs(SAVE_PATH)

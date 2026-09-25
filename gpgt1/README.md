@@ -18,31 +18,37 @@ A single fixed-ring planetary stage with carrier output has reduction:
 
 - `ratio = 1 + ring / sun`
 
-The script uses these two stages:
+The script uses these two stages, with increased planet tooth counts and six planets in stage 2:
 
 ### Stage 1
 
-- Sun: **72 teeth**
-- Planet: **9 teeth**
-- Ring: **90 teeth**
+- Sun: **96 teeth**
+- Planet: **12 teeth**
+- Ring: **120 teeth**
+- Planets: **3**
 
 Checks:
 
 - `ring = sun + 2 * planet`
-- `90 = 72 + 2 * 9` ✅
-- `stage_1_ratio = 1 + 90 / 72 = 9/4 = 2.25 : 1`
+- `120 = 96 + 2 * 12` ✅
+- Planet placement rule used by the generator for any stage: `(sun + ring) / planets` must be an integer.
+- Stage 1 check: `(96 + 120) / 3 = 72` ✅
+- `stage_1_ratio = 1 + 120 / 96 = 9/4 = 2.25 : 1`
 
 ### Stage 2
 
-- Sun: **81 teeth**
-- Planet: **9 teeth**
-- Ring: **99 teeth**
+- Sun: **108 teeth**
+- Planet: **12 teeth**
+- Ring: **132 teeth**
+- Planets: **6** (60° spacing)
 
 Checks:
 
 - `ring = sun + 2 * planet`
-- `99 = 81 + 2 * 9` ✅
-- `stage_2_ratio = 1 + 99 / 81 = 20/9 = 2.222222... : 1`
+- `132 = 108 + 2 * 12` ✅
+- Stage 2 check of the same placement rule: `(108 + 132) / 6 = 240 / 6 = 40` ✅
+- The script uses that integer spacing index with `planet_index = 0..5`, producing six equal angular steps (`360° / 6 = 60°`). ✅
+- `stage_2_ratio = 1 + 132 / 108 = 20/9 = 2.222222... : 1`
 
 ### Overall reduction
 
@@ -61,6 +67,7 @@ So the assembly meets the requested **exact 5:1 overall ratio** with **two plane
   - an interstage coupler continues that shaft through the stage 2 sun bore up to the sun's top face
   - stage 2 ring is also fixed
   - stage 2 carrier is the final output
+  - a circular top output platform is fused to the stage 2 carrier pins and rotates with that carrier as the final turntable output (for mounting an end effector/load)
 
 Both stages share a common axis and are separated axially by `STAGE_SPACING_MM`.
 
@@ -70,7 +77,8 @@ At the top of `gpgt1/planetary_gearbox.py` you can adjust:
 
 - `MODULE_MM`
 - `PRESSURE_ANGLE_DEG`
-- `NUM_PLANETS`
+- `STAGE1_NUM_PLANETS`
+- `STAGE2_NUM_PLANETS` (set to `6`)
 - `GEAR_HEIGHT_MM`
 - `RING_HEIGHT_MM`
 - `SUN_BORE_DIA_MM`
@@ -79,6 +87,9 @@ At the top of `gpgt1/planetary_gearbox.py` you can adjust:
 - `CARRIER_PLATE_THICKNESS_MM`
 - `INTERSTAGE_GAP_MM`
 - `STAGE_1` and `STAGE_2` tooth counts
+- `OUTPUT_PLATFORM_DIA_MM`
+- `OUTPUT_PLATFORM_THICKNESS_MM`
+- `OUTPUT_PLATFORM_FUSE_OVERLAP_MM`
 
 ## Bore and pin details
 
@@ -87,6 +98,7 @@ At the top of `gpgt1/planetary_gearbox.py` you can adjust:
 - Each **carrier** is modeled as a plate/disc with **cylindrical pins** located on the planet circle radius.
 - Those pins pass through the matching planet bores in the static CAD assembly.
 - The carrier also includes a smaller-diameter **central output shaft**, and the interstage coupler continues that shaft into the second sun bore.
+- Stage 2 additionally includes a fused **output platform disc** above the carrier pins as the rotating top table/output stage.
 
 If you need manufacturing clearance, slightly increase the planet bore diameter or slightly reduce the pin diameter.
 
