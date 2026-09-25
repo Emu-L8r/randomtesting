@@ -269,19 +269,23 @@ add_feature(output_group, "TopPlatform", platform, COLORS["platform"])
 bearing_inner_r = output_hub_r + 0.8
 bearing_outer_r = bearing_inner_r + 5.8
 bearing_height = 8.0
+ball_r = 0.9
+ball_center_r = bearing_inner_r + 3.0
+inner_race_outer_r = ball_center_r - ball_r - 0.15
+outer_race_inner_r = ball_center_r + ball_r + 0.15
 
-fixed_race = Part.makeCylinder(bearing_outer_r, bearing_height).cut(Part.makeCylinder(bearing_inner_r + 1.4, bearing_height))
+fixed_race = Part.makeCylinder(bearing_outer_r, bearing_height).cut(Part.makeCylinder(outer_race_inner_r, bearing_height))
 fixed_race.translate(App.Vector(0.0, 0.0, bearing_z))
 add_feature(fixed_group, "OutputBearing_FixedOuterRace", fixed_race, COLORS["fixed_light"])
 
-rotating_race = Part.makeCylinder(bearing_inner_r + 1.0, bearing_height).cut(Part.makeCylinder(bearing_inner_r - 1.0, bearing_height))
+rotating_race = Part.makeCylinder(inner_race_outer_r, bearing_height).cut(Part.makeCylinder(bearing_inner_r - 1.0, bearing_height))
 rotating_race.translate(App.Vector(0.0, 0.0, bearing_z))
 add_feature(output_group, "OutputBearing_RotatingInnerRace", rotating_race, COLORS["rotating"])
 
 for idx in range(14):
     ball_angle = math.radians((360.0 / 14.0) * idx)
-    center = polar_xy(bearing_inner_r + 0.5, ball_angle)
-    ball = Part.makeSphere(0.9)
+    center = polar_xy(ball_center_r, ball_angle)
+    ball = Part.makeSphere(ball_r)
     ball.translate(App.Vector(center.x, center.y, bearing_z + 0.5 * bearing_height))
     add_feature(bearing_elements_group, f"OutputBearing_Ball_{idx+1}", ball, (0.78, 0.80, 0.84))
 
