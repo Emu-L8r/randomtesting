@@ -42,6 +42,7 @@ GEAR_WIDTH = 8.0
 PLANET_CLEARANCE = 0.5
 HOUSING_TOP_Z = 80.0
 PLATFORM_THICKNESS = 10.0
+BEARING_BALL_COUNT = 14
 
 COLORS = {
     "fixed_dark": (0.28, 0.31, 0.36),
@@ -285,8 +286,8 @@ rotating_race = Part.makeCylinder(inner_race_outer_r, bearing_height).cut(Part.m
 rotating_race.translate(App.Vector(0.0, 0.0, bearing_z))
 add_feature(output_group, "OutputBearing_RotatingInnerRace", rotating_race, COLORS["rotating"])
 
-for idx in range(14):
-    ball_angle = math.radians((360.0 / 14.0) * idx)
+for idx in range(BEARING_BALL_COUNT):
+    ball_angle = math.radians((360.0 / BEARING_BALL_COUNT) * idx)
     center = polar_xy(ball_center_r, ball_angle)
     ball = Part.makeSphere(ball_r)
     ball.translate(App.Vector(center.x, center.y, bearing_z + 0.5 * bearing_height))
