@@ -388,7 +388,7 @@ def main():
     )
 
     interstage_group = add_group(doc, "InterstageDrive")
-    coupler_height = max(2.0, stage_2["sun_base_z"] - stage_1["hub_top_z"])
+    coupler_height = max(2.0, stage_2["sun_top_z"] - stage_1["hub_top_z"])
     coupler = Part.makeCylinder(0.5 * SUN_BORE_DIA_MM, coupler_height)
     coupler.translate(App.Vector(0.0, 0.0, stage_1["hub_top_z"]))
     add_shape_feature(doc, interstage_group, "Stage1CarrierToStage2SunCoupler", coupler, COLORS["shaft"])
