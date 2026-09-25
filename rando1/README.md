@@ -33,7 +33,7 @@ Approximate overall reduction (fixed ring, sun input, carrier output):
 2. Open `rando1/planetary_platform_freecad.py` as a macro.
 3. Run it.
 
-The script creates document groups: `FixedHousing`, `Stage1`, `Stage2`, `Stage3`, `RotatingOutput`, and `BearingRollingElements`.
+The script creates document groups: `FixedHousing`, `Stage1`, `Stage2`, `Stage3`, `RotatingOutput`, `BearingRollingElements`, and `CompoundCouplers`.
 
 ## Disclaimer
 

@@ -218,6 +218,7 @@ stage2_group = DOC.addObject("App::DocumentObjectGroup", "Stage2")
 stage3_group = DOC.addObject("App::DocumentObjectGroup", "Stage3")
 output_group = DOC.addObject("App::DocumentObjectGroup", "RotatingOutput")
 bearing_elements_group = DOC.addObject("App::DocumentObjectGroup", "BearingRollingElements")
+coupler_group = DOC.addObject("App::DocumentObjectGroup", "CompoundCouplers")
 
 stage_groups = [stage1_group, stage2_group, stage3_group]
 
@@ -247,8 +248,8 @@ z2_sun_bottom = STAGES[1]["z"] - 0.5 * GEAR_WIDTH
 z2_carrier_top = STAGES[1]["z"] + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE + (GEAR_WIDTH * 0.45)
 z3_sun_bottom = STAGES[2]["z"] - 0.5 * GEAR_WIDTH
 
-add_coupler(stage1_group, "Carrier1_to_Sun2_Coupler", z1_carrier_top - 0.2, z2_sun_bottom + 0.2, 2.8)
-add_coupler(stage2_group, "Carrier2_to_Sun3_Coupler", z2_carrier_top - 0.2, z3_sun_bottom + 0.2, 2.6)
+add_coupler(coupler_group, "Carrier1_to_Sun2_Coupler", z1_carrier_top - 0.2, z2_sun_bottom + 0.2, 2.8)
+add_coupler(coupler_group, "Carrier2_to_Sun3_Coupler", z2_carrier_top - 0.2, z3_sun_bottom + 0.2, 2.6)
 
 # Output hub + platform rigid to Stage 3 carrier
 z3_carrier_top = STAGES[2]["z"] + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE + (GEAR_WIDTH * 0.45)
