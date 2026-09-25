@@ -182,7 +182,7 @@ def make_carrier(planet_center_r, planet_tip_r, width, sun_root_r, planet_angles
     return plate, carrier_local_bottom_z, carrier_local_top_z
 
 
-def build_stage_geometry(stage_cfg, stage_phase):
+def build_stage_geometry(stage_cfg, stage_phase, include_carrier=True):
     module = stage_cfg["module"]
     sun_teeth = stage_cfg["sun"]
     planet_teeth = stage_cfg["planet"]
@@ -224,15 +224,21 @@ def build_stage_geometry(stage_cfg, stage_phase):
         planet_shape.translate(App.Vector(offset.x, offset.y, z_center - 0.5 * GEAR_WIDTH))
         planet_shapes.append(planet_shape)
 
-    carrier_shape, carrier_local_bottom_z, carrier_local_top_z = make_carrier(
-        planet_center_r=planet_center_r,
-        planet_tip_r=planet_tip_r,
-        width=GEAR_WIDTH,
-        sun_root_r=sun_root_r,
-        planet_angles=planet_angles,
-    )
-    carrier_z = z_center + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE
-    carrier_shape.translate(App.Vector(0.0, 0.0, carrier_z))
+    carrier_shape = None
+    carrier_top_z = None
+    carrier_bottom_z = None
+    if include_carrier:
+        carrier_shape, carrier_local_bottom_z, carrier_local_top_z = make_carrier(
+            planet_center_r=planet_center_r,
+            planet_tip_r=planet_tip_r,
+            width=GEAR_WIDTH,
+            sun_root_r=sun_root_r,
+            planet_angles=planet_angles,
+        )
+        carrier_z = z_center + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE
+        carrier_shape.translate(App.Vector(0.0, 0.0, carrier_z))
+        carrier_top_z = carrier_z + carrier_local_top_z
+        carrier_bottom_z = carrier_z + carrier_local_bottom_z
     min_center_distance = min_center_spacing_on_radius(planet_center_r, planet_angles)
     min_tip_clearance = min_center_distance - (2.0 * planet_tip_r)
 
@@ -244,12 +250,13 @@ def build_stage_geometry(stage_cfg, stage_phase):
         "sun_root_r": sun_root_r,
         "planet_center_r": planet_center_r,
         "planet_tip_r": planet_tip_r,
-        "carrier_top_z": carrier_z + carrier_local_top_z,
-        "carrier_bottom_z": carrier_z + carrier_local_bottom_z,
+        "carrier_top_z": carrier_top_z,
+        "carrier_bottom_z": carrier_bottom_z,
         "sun_bottom_z": z_center - 0.5 * GEAR_WIDTH,
         "sun_top_z": z_center + 0.5 * GEAR_WIDTH,
         "min_center_distance": min_center_distance,
         "min_tip_clearance": min_tip_clearance,
+        "planet_angles": planet_angles,
     }
 
 
@@ -269,8 +276,8 @@ bearing_elements_group = DOC.addObject("App::DocumentObjectGroup", "BearingRolli
 stage1_phase = math.radians(3.0)
 stage2_phase = math.radians(7.0)
 
-stage1_geom = build_stage_geometry(STAGES[0], stage1_phase)
-stage2_geom = build_stage_geometry(STAGES[1], stage2_phase)
+stage1_geom = build_stage_geometry(STAGES[0], stage1_phase, include_carrier=True)
+stage2_geom = build_stage_geometry(STAGES[1], stage2_phase, include_carrier=False)
 min_planet_clearance = min(stage1_geom["min_tip_clearance"], stage2_geom["min_tip_clearance"])
 if min_planet_clearance < 0.0:
     raise ValueError(
@@ -309,7 +316,6 @@ stage1_input = stage1_geom["sun"].fuse(input_shaft)
 add_feature(stage1_group, "Stage1_InputSunAndShaft", stage1_input, COLORS["shaft"])
 for idx, pl_shape in enumerate(stage1_geom["planets"]):
     add_feature(stage1_group, f"Stage1_Planet_{idx+1}", pl_shape, COLORS["rotating_alt"])
-add_feature(stage1_group, "Stage1_Carrier", stage1_geom["carrier"], COLORS["rotating"])
 
 # Real rigid compound coupling: Stage 1 carrier drives Stage 2 sun.
 c12_anchor_a = stage1_geom["carrier_top_z"]
@@ -324,14 +330,25 @@ for idx, pl_shape in enumerate(stage2_geom["planets"]):
     add_feature(stage2_group, f"Stage2_Planet_{idx+1}", pl_shape, COLORS["rotating_alt"])
 
 # Real rigid output coupling: Stage 2 carrier -> output hub -> top platform.
-output_hub_base_z = stage2_geom["carrier_top_z"] - 0.2
+output_carrier_shape, output_carrier_local_bottom_z, output_carrier_local_top_z = make_carrier(
+    planet_center_r=stage2_geom["planet_center_r"],
+    planet_tip_r=stage2_geom["planet_tip_r"],
+    width=GEAR_WIDTH,
+    sun_root_r=stage2_geom["sun_root_r"],
+    planet_angles=stage2_geom["planet_angles"],
+)
+output_carrier_z = STAGES[1]["z"] + 0.5 * GEAR_WIDTH + PLANET_CLEARANCE
+output_carrier_shape.translate(App.Vector(0.0, 0.0, output_carrier_z))
+stage2_carrier_top_z = output_carrier_z + output_carrier_local_top_z
+
+output_hub_base_z = stage2_carrier_top_z - 0.2
 platform_z = HOUSING_TOP_Z + 8.0
 output_hub_r = stage2_geom["planet_center_r"] + 0.55 * stage2_geom["planet_tip_r"]
 output_hub = Part.makeCylinder(output_hub_r, platform_z - output_hub_base_z)
 output_hub.translate(App.Vector(0.0, 0.0, output_hub_base_z))
 platform = Part.makeCylinder(max_ring_outer + 12.0, PLATFORM_THICKNESS)
 platform.translate(App.Vector(0.0, 0.0, platform_z))
-stage2_output_compound = stage2_geom["carrier"].copy().fuse(output_hub).fuse(platform)
+stage2_output_compound = output_carrier_shape.fuse(output_hub).fuse(platform)
 add_feature(output_group, "Stage2Carrier_OutputHub_TopPlatform_Rigid", stage2_output_compound, COLORS["platform"])
 
 # Annular output bearing depiction between fixed housing and rotating output.
